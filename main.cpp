@@ -56,13 +56,15 @@ int main(int argc, char *argv[])
     root->p0 = p0_root;
     root->width = 4 * width;
     vector<Vector3D> Accelerations(2 * N);
-
-    cout << "Corord : " << Bodies[0].pos.x << " \n";
+    Statistics times;
     for (uint i = 0; i < num_iter; i++)
     {
-        timestep(Bodies, Accelerations, root, dt, theta, (i % 2) * N);
+        Statistics times_per_step = timestep(Bodies, Accelerations, root, dt, theta, (i % 2) * N); // Choice : Use a class of parameters. dt, theta etc
+        times.t_insert += times_per_step.t_insert;
+        times.t_force += times_per_step.t_force;
+        times.t_leapfrog += times_per_step.t_leapfrog;
     }
 
-    cout << "Corord : " << Bodies[0].pos.x << " \n";
+    times.print();
     write_to_file(Bodies, "output.txt");
 }

@@ -1,5 +1,5 @@
 CXX=clang++
-CXXFLAGS +=  -g -O0 -MMD
+CXXFLAGS +=  -g -O3 -MMD
 
 targets : vanilla 
 

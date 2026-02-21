@@ -150,8 +150,11 @@ Vector3D compute_acceleration(const Body *const body, const Node *const node, co
     return res;
 }
 
-void timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, Node *root, const double dt, const double theta, unsigned i1)
+Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, Node *root, const double dt, const double theta, unsigned i1)
 {
+    // Each thread better use it's own statistics, to avoid race even for statistic collection
+    Statistics times;
+
     // determine whether the first half of the acceleration array is old or the second half
     const unsigned int N = Bodies.size();
     unsigned i0 = 0;
@@ -159,20 +162,30 @@ void timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, N
         i0 = N;
 
     // insert bodies into the tree
+    auto start_insert = std::chrono::high_resolution_clock::now();
     for (const auto &b : Bodies)
     {
         insert(&b, root);
     }
+    auto end_insert = std::chrono::high_resolution_clock::now();
+
+    times.t_insert += std::chrono::duration<double>(end_insert - start_insert).count();
 
     // force calculation
+
+    auto start_force = std::chrono::high_resolution_clock::now();
 
     for (unsigned i = 0; i < N; ++i)
     {
         accelerations[i1 + i] = compute_acceleration(&Bodies[i], root, theta);
     }
 
+    auto end_force = std::chrono::high_resolution_clock::now();
+
+    times.t_force += std::chrono::duration<double>(end_force - start_force).count();
+
     // leapfrog integration
-    std::cout << "orig : " << Bodies[0].pos.x << " : " << Bodies[0].vel.x << "\n";
+    auto start_leapfrog = std::chrono::high_resolution_clock::now();
     for (unsigned i = 0; i < N; ++i)
     {
         Vector3D p_car = Bodies[i].pos;
@@ -185,11 +198,16 @@ void timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, N
         Bodies[i].vel.y += 0.5 * (accelerations[i0 + i].y + accelerations[i1 + i].y) * dt;
         Bodies[i].vel.z += 0.5 * (accelerations[i0 + i].z + accelerations[i1 + i].z) * dt;
     }
-
-    std::cout << "after : " << Bodies[0].pos.x << " : " << Bodies[0].vel.x << "\n";
+    auto end_leapfrog = std::chrono::high_resolution_clock::now();
+    times.t_leapfrog += std::chrono::duration<double>(end_leapfrog - start_leapfrog).count();
 
     // tree deletion
     // we delete all the children only. Root is intact
-
+    // Also counted in tree construction
+    start_insert = std::chrono::high_resolution_clock::now();
     root->reset_if_root();
+    end_insert = std::chrono::high_resolution_clock::now();
+    times.t_insert += std::chrono::duration<double>(end_insert - start_insert).count();
+
+    return times;
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <iostream>
 
 #define G 6.6743E-20 // km^3*kg^-1*s^-2
 
@@ -72,6 +73,23 @@ public:
     }
 };
 
+class Statistics // Reporting Statistics
+{
+public:
+    double t_insert;
+    double t_force;
+    double t_leapfrog;
+
+    Statistics() : t_insert(0), t_force(0), t_leapfrog(0) {}
+
+    void print()
+    {
+        std::cout << "time taken by tree construction and deletion : " << t_insert << "\n";
+        std::cout << "time taken by force computation : " << t_force << "\n";
+        std::cout << "time taken by leapfrog integration : " << t_leapfrog << "\n";
+    }
+};
+
 void insert(const Body *const b, Node *const n);
 Vector3D compute_acceleration(const Body *const b, const Node *const n, const double theta);
-void timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, Node *root, const double dt, const double theta, unsigned i1);
+Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, Node *root, const double dt, const double theta, unsigned i1);
