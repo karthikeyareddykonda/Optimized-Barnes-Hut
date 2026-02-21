@@ -1,5 +1,5 @@
-CXX=clang++
-CXXFLAGS +=  -g -O3 -MMD
+CXX=g++
+CXXFLAGS += -O3 -MMD -std=c++20
 
 targets : vanilla 
 
@@ -13,6 +13,6 @@ baseline.o : libs/baseline.cpp
 
 
 clean :
-	rm *.o  vanilla
+	rm -r *.o  *.d *.dSYM vanilla
 
 -include $(wildcard *.d)

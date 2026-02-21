@@ -68,7 +68,7 @@ public:
     {
         for (Node *child : children)
         {
-            // delete child;
+            delete child;
         }
     }
 };

@@ -9,9 +9,9 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    if (argc != 5)
+    if (argc != 6)
     {
-        cout << "Usage a.out inputFile num_iter dt theta\n";
+        cout << "Usage a.out inputFile num_iter dt theta outfile\n";
         return 0;
     }
     ifstream File(argv[1]);
@@ -21,6 +21,7 @@ int main(int argc, char *argv[])
     const int num_iter = atoi(argv[2]);
     const double dt = stod(argv[3]); // Argv is in seconds --> converted to double
     const double theta = stod(argv[4]);
+    const string out_file = argv[5];
     cout << "Num objects " << N << "\n";
 
     std::string line;
@@ -66,5 +67,5 @@ int main(int argc, char *argv[])
     }
 
     times.print();
-    write_to_file(Bodies, "output.txt");
+    write_to_file(Bodies, out_file);
 }
