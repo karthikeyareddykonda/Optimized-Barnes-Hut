@@ -3,11 +3,13 @@ CXXFLAGS += -O3 -MMD -std=c++20
 
 targets : vanilla 
 
-vanilla :  baseline.o  main.cpp
-	$(CXX) $(CXXFLAGS) baseline.o  main.cpp -o vanilla
+vanilla :  BaseSim.o  main.cpp
+	$(CXX) $(CXXFLAGS) BaseSim.o  main.cpp -o vanilla
 
-baseline.o : libs/baseline.cpp
-	$(CXX) $(CXXFLAGS) -c libs/baseline.cpp -o baseline.o
+
+BaseSim.o :  libs/BaseSim.cpp 
+	$(CXX) $(CXXFLAGS) -c libs/BaseSim.cpp -o BaseSim.o
+
 
 
 

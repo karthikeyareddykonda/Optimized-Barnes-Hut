@@ -90,6 +90,22 @@ public:
     }
 };
 
-void insert(const Body *const b, Node *const n);
+class BaseSim
+{
+private:
+    const double dt;
+    const double theta;
+    void insert(const Body *const b, Node *const n);
+    void make_children(Node *n);
+    Node *construct_tree(const std::vector<Body> &Bodies);
+    Vector3D compute_acceleration(const Body *const b, const Node *const n, const double theta);
+    Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1);
+
+public:
+    Statistics run(std::vector<Body> &Bodies, const int num_steps);
+
+    BaseSim(double dt, double theta) : dt(dt), theta(theta) {}
+};
+
 Vector3D compute_acceleration(const Body *const b, const Node *const n, const double theta);
 Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, Node *root, const double dt, const double theta, unsigned i1);

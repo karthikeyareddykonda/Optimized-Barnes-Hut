@@ -1,9 +1,10 @@
+#pragma once
 #include "baseline.h"
 #include <vector>
 #include <cfloat>
 #include <fstream>
 #include <iomanip>
-std::pair<double, double> find_min_max(const std::vector<Body> &Bodies)
+inline std::pair<double, double> find_min_max(const std::vector<Body> &Bodies)
 {
     double res_min = DBL_MAX, res_max = DBL_MIN;
     for (const Body &b : Bodies)
@@ -15,7 +16,7 @@ std::pair<double, double> find_min_max(const std::vector<Body> &Bodies)
     return std::make_pair(res_min, res_max);
 }
 
-void write_to_file(const std::vector<Body> &Bodies, std::string filename)
+inline void write_to_file(const std::vector<Body> &Bodies, std::string filename)
 {
 
     std::ofstream file(filename);

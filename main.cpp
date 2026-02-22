@@ -49,22 +49,9 @@ int main(int argc, char *argv[])
     }
 
     File.close();
-    auto limits = find_min_max(Bodies);
-    double width = limits.second - limits.first;
-    Vector3D p0_root{limits.first - 1.5 * width, limits.first - 1.5 * width, limits.first - 1.5 * width};
 
-    Node *root = new Node();
-    root->p0 = p0_root;
-    root->width = 4 * width;
-    vector<Vector3D> Accelerations(2 * N);
-    Statistics times;
-    for (uint i = 0; i < num_iter; i++)
-    {
-        Statistics times_per_step = timestep(Bodies, Accelerations, root, dt, theta, (i % 2) * N); // Choice : Use a class of parameters. dt, theta etc
-        times.t_insert += times_per_step.t_insert;
-        times.t_force += times_per_step.t_force;
-        times.t_leapfrog += times_per_step.t_leapfrog;
-    }
+    BaseSim *sim = new BaseSim(dt, theta);
+    Statistics times = sim->run(Bodies, num_iter);
 
     times.print();
     write_to_file(Bodies, out_file);

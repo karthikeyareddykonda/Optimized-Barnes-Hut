@@ -1,11 +1,11 @@
 #include "baseline.h"
+#include "utils.h"
 #include <iostream>
 #include <cmath>
 #include <chrono>
 
-static inline void make_children(Node *n)
+void BaseSim::make_children(Node *n)
 {
-
     std::vector<Vector3D> p(8);
     double half_width = n->width * 0.5;
     Vector3D p0 = n->p0; // Choice. Value deep copy, is it required ?
@@ -35,7 +35,7 @@ static inline void make_children(Node *n)
     }
 }
 
-void insert(const Body *const b, Node *const n)
+void BaseSim::insert(const Body *const b, Node *const n)
 {
     Node *node = n;
     if (node->children[0] == nullptr)
@@ -104,7 +104,25 @@ void insert(const Body *const b, Node *const n)
     insert(b, next_node);
 }
 
-Vector3D compute_acceleration(const Body *const body, const Node *const node, const double theta)
+Node *BaseSim::construct_tree(const std::vector<Body> &Bodies)
+{
+    // Warning , there's entire tree allocated here. Have to be carefully destroyed before calling construct again
+    auto limits = find_min_max(Bodies);
+    double width = limits.second - limits.first;
+    Vector3D p0_root{limits.first - 1.5 * width, limits.first - 1.5 * width, limits.first - 1.5 * width};
+
+    Node *root = new Node();
+    root->p0 = p0_root;
+    root->width = 4 * width;
+
+    for (const auto &b : Bodies)
+    {
+        insert(&b, root); // Multiple new calls. here !
+    }
+    return root;
+}
+
+Vector3D BaseSim::compute_acceleration(const Body *const body, const Node *const node, const double theta)
 {
     if (node->children[0] == NULL)
     { // no children -> end node
@@ -152,7 +170,7 @@ Vector3D compute_acceleration(const Body *const body, const Node *const node, co
     return res;
 }
 
-Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, Node *root, const double dt, const double theta, unsigned i1)
+Statistics BaseSim::timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1)
 {
     // Each thread better use it's own statistics, to avoid race even for statistic collection
     Statistics times;
@@ -165,10 +183,8 @@ Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerati
 
     // insert bodies into the tree
     auto start_insert = std::chrono::high_resolution_clock::now();
-    for (const auto &b : Bodies)
-    {
-        insert(&b, root);
-    }
+    Node *root = construct_tree(Bodies);
+
     auto end_insert = std::chrono::high_resolution_clock::now();
 
     times.t_insert += std::chrono::duration<double>(end_insert - start_insert).count();
@@ -207,9 +223,25 @@ Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerati
     // we delete all the children only. Root is intact
     // Also counted in tree construction
     start_insert = std::chrono::high_resolution_clock::now();
-    root->reset_if_root();
+    delete root;
     end_insert = std::chrono::high_resolution_clock::now();
     times.t_insert += std::chrono::duration<double>(end_insert - start_insert).count();
 
+    return times;
+}
+
+Statistics BaseSim::run(std::vector<Body> &Bodies, const int num_steps)
+{
+
+    Statistics times;
+    const int N = Bodies.size();
+    std::vector<Vector3D> Accelerations(2 * N);
+    for (uint i = 0; i < num_steps; i++)
+    {
+        Statistics times_per_step = timestep(Bodies, Accelerations, (i % 2) * N); // Choice : Use a class of parameters. dt, theta etc
+        times.t_insert += times_per_step.t_insert;
+        times.t_force += times_per_step.t_force;
+        times.t_leapfrog += times_per_step.t_leapfrog;
+    }
     return times;
 }
