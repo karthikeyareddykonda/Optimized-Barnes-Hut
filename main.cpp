@@ -7,6 +7,10 @@
 #include "libs/utils.h"
 using namespace std;
 
+#ifndef SIM_CLASS
+#define SIM_CLASS BaseSim
+#endif
+
 int main(int argc, char *argv[])
 {
     if (argc != 6)
@@ -50,7 +54,7 @@ int main(int argc, char *argv[])
 
     File.close();
 
-    BaseSim *sim = new BaseSim(dt, theta);
+    BaseSim *sim = new SIM_CLASS(dt, theta);
     Statistics times = sim->run(Bodies, num_iter);
 
     times.print();

@@ -46,6 +46,8 @@ public:
     {
         body = nullptr;
         width = 0;
+        mass = 0;
+        COM = Vector3D(0, 0, 0);
         children.assign(8, nullptr);
     }
 
@@ -95,11 +97,14 @@ class BaseSim
 private:
     const double dt;
     const double theta;
-    void insert(const Body *const b, Node *const n);
-    void make_children(Node *n);
-    Node *construct_tree(const std::vector<Body> &Bodies);
+
     Vector3D compute_acceleration(const Body *const b, const Node *const n, const double theta);
     Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1);
+    void insert(const Body *const b, Node *const n);
+
+protected:
+    void make_children(Node *n);
+    virtual Node *construct_tree(const std::vector<Body> &Bodies);
 
 public:
     Statistics run(std::vector<Body> &Bodies, const int num_steps);
@@ -107,5 +112,15 @@ public:
     BaseSim(double dt, double theta) : dt(dt), theta(theta) {}
 };
 
-Vector3D compute_acceleration(const Body *const b, const Node *const n, const double theta);
-Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, Node *root, const double dt, const double theta, unsigned i1);
+class PostCOMSim : public BaseSim
+{
+private:
+    void compute_COM_post(Node *const n);
+    void insert(const Body *const b, Node *const n);
+
+protected:
+    Node *construct_tree(const std::vector<Body> &Bodies) override;
+
+public:
+    PostCOMSim(double dt, double theta) : BaseSim(dt, theta) {}
+};
