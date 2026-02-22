@@ -4,41 +4,10 @@
 #include <cmath>
 #include <chrono>
 
-void BaseSim::make_children(Node *n)
-{
-    std::vector<Vector3D> p(8);
-    double half_width = n->width * 0.5;
-    Vector3D p0 = n->p0; // Choice. Value deep copy, is it required ?
-    Vector3D p00{p0.x, p0.y, p0.z};
-    Vector3D p01{p0.x + half_width, p0.y, p0.z};
-    Vector3D p02{p0.x, p0.y + half_width, p0.z};
-    Vector3D p03{p0.x + half_width, p0.y + half_width, p0.z};
-    Vector3D p10{p0.x, p0.y, p0.z + half_width};
-    Vector3D p11{p0.x + half_width, p0.y, p0.z + half_width};
-    Vector3D p12{p0.x, p0.y + half_width, p0.z + half_width};
-    Vector3D p13{p0.x + half_width, p0.y + half_width, p0.z + half_width};
-
-    p[0] = p00; // Choice p[0].p0 = Vector3D{p0.x, p0.y, p0.z}.. calls move assignment ?
-    p[1] = p01;
-    p[2] = p02;
-    p[3] = p03;
-    p[4] = p10;
-    p[5] = p11;
-    p[6] = p12;
-    p[7] = p13;
-
-    for (unsigned i = 0; i < 8; ++i)
-    {
-        n->children[i] = new Node();
-        n->children[i]->width = half_width;
-        n->children[i]->p0 = p[i];
-    }
-}
-
 void BaseSim::insert(const Body *const b, Node *const n)
 {
     Node *node = n;
-    if (node->children[0] == nullptr)
+    if (node->is_leaf())
     { // no children -> end node
         if (node->body == nullptr)
         { // no attached body -> free for insert
@@ -49,7 +18,7 @@ void BaseSim::insert(const Body *const b, Node *const n)
         }
 
         // has attached body -> make children, move attached body and new body into children
-        make_children(node);
+        node->make_children();
         Vector3D old_b = node->body->pos; // choice : deep copy //to_cartesian(&node->body->p);
         Vector3D new_b = b->pos;          // to_cartesian(&b->p);
         Vector3D p0 = node->p0;           // to_cartesian(&node->p0);
@@ -71,12 +40,9 @@ void BaseSim::insert(const Body *const b, Node *const n)
 
         node->mass = node->mass + b->mass;
         node->COM = COM; // Deep copy !
-        node->children[mov_idx]->body = node->body;
-        node->children[mov_idx]->COM = node->body->pos;
-        node->children[mov_idx]->mass = node->body->mass;
-        node->body = nullptr;
+        node->move_body_with_mass(mov_idx);
 
-        insert(b, node->children[new_idx]);
+        insert(b, node->get_child(new_idx));
         return;
     }
 
@@ -99,7 +65,7 @@ void BaseSim::insert(const Body *const b, Node *const n)
 
     node->mass = node->mass + b->mass;
     node->COM = COM; // Seems redundant
-    Node *next_node = node->children[new_idx];
+    Node *next_node = node->get_child(new_idx);
 
     insert(b, next_node);
 }
@@ -111,9 +77,7 @@ Node *BaseSim::construct_tree(const std::vector<Body> &Bodies)
     double width = limits.second - limits.first;
     Vector3D p0_root{limits.first - 1.5 * width, limits.first - 1.5 * width, limits.first - 1.5 * width};
 
-    Node *root = new Node();
-    root->p0 = p0_root;
-    root->width = 4 * width;
+    Node *root = new Node(p0_root, 4 * width);
 
     for (const auto &b : Bodies)
     {
@@ -124,7 +88,7 @@ Node *BaseSim::construct_tree(const std::vector<Body> &Bodies)
 
 Vector3D BaseSim::compute_acceleration(const Body *const body, const Node *const node, const double theta)
 {
-    if (node->children[0] == NULL)
+    if (node->is_leaf())
     { // no children -> end node
         if (node->body == NULL || node->body == body)
         { // no attached body -> zero acceleration
@@ -155,14 +119,14 @@ Vector3D BaseSim::compute_acceleration(const Body *const body, const Node *const
     }
 
     // greater than theta -> sum up accelerations from child nodes
-    Vector3D a0 = compute_acceleration(body, node->children[0], theta);
-    Vector3D a1 = compute_acceleration(body, node->children[1], theta);
-    Vector3D a2 = compute_acceleration(body, node->children[2], theta);
-    Vector3D a3 = compute_acceleration(body, node->children[3], theta);
-    Vector3D a4 = compute_acceleration(body, node->children[4], theta);
-    Vector3D a5 = compute_acceleration(body, node->children[5], theta);
-    Vector3D a6 = compute_acceleration(body, node->children[6], theta);
-    Vector3D a7 = compute_acceleration(body, node->children[7], theta);
+    Vector3D a0 = compute_acceleration(body, node->get_child(0), theta);
+    Vector3D a1 = compute_acceleration(body, node->get_child(1), theta);
+    Vector3D a2 = compute_acceleration(body, node->get_child(2), theta);
+    Vector3D a3 = compute_acceleration(body, node->get_child(3), theta);
+    Vector3D a4 = compute_acceleration(body, node->get_child(4), theta);
+    Vector3D a5 = compute_acceleration(body, node->get_child(5), theta);
+    Vector3D a6 = compute_acceleration(body, node->get_child(6), theta);
+    Vector3D a7 = compute_acceleration(body, node->get_child(7), theta);
     Vector3D res = {
         a0.x + a1.x + a2.x + a3.x + a4.x + a5.x + a6.x + a7.x,
         a0.y + a1.y + a2.y + a3.y + a4.y + a5.y + a6.y + a7.y,

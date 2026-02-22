@@ -5,7 +5,7 @@ void PostCOMSim::insert(const Body *const b, Node *const n)
 {
     // this insert doesn't do any COM related compute
     Node *node = n;
-    if (node->children[0] == nullptr)
+    if (node->is_leaf())
     { // no children -> end node
         if (node->body == nullptr)
         { // no attached body -> free for insert
@@ -14,7 +14,7 @@ void PostCOMSim::insert(const Body *const b, Node *const n)
         }
 
         // has attached body -> make children, move attached body and new body into children
-        make_children(node);
+        node->make_children();
         Vector3D old_b = node->body->pos; // choice : deep copy //to_cartesian(&node->body->p);
         Vector3D new_b = b->pos;          // to_cartesian(&b->p);
         Vector3D p0 = node->p0;           // to_cartesian(&node->p0);
@@ -28,10 +28,9 @@ void PostCOMSim::insert(const Body *const b, Node *const n)
             (unsigned)(new_b.y > p0.y + half_width) * 2 +
             (unsigned)(new_b.z > p0.z + half_width) * 4;
 
-        node->children[mov_idx]->body = node->body;
-        node->body = nullptr;
+        node->move_body_ptrOnly(mov_idx);
 
-        insert(b, node->children[new_idx]);
+        insert(b, node->get_child(new_idx));
         return;
     }
 
@@ -45,7 +44,7 @@ void PostCOMSim::insert(const Body *const b, Node *const n)
         (unsigned)(new_b.y > p0.y + half_width) * 2 +
         (unsigned)(new_b.z > p0.z + half_width) * 4;
 
-    Node *next_node = node->children[new_idx];
+    Node *next_node = node->get_child(new_idx);
 
     insert(b, next_node);
 }
@@ -53,7 +52,7 @@ void PostCOMSim::insert(const Body *const b, Node *const n)
 void PostCOMSim::compute_COM_post(Node *const n)
 {
     Node *node = n;
-    if (node->children[0] == nullptr)
+    if (node->is_leaf())
     {
         if (node->body != nullptr)
         {
@@ -69,9 +68,10 @@ void PostCOMSim::compute_COM_post(Node *const n)
 
     for (unsigned i = 0; i < 8; i++)
     {
-        compute_COM_post(node->children[i]);
-        Vector3D childCOM = node->children[i]->COM;
-        double child_mass = node->children[i]->mass;
+        Node *const child = node->get_child(i);
+        compute_COM_post(child);
+        Vector3D childCOM = child->COM;
+        double child_mass = child->mass;
 
         COM.x += child_mass * childCOM.x;
         COM.y += child_mass * childCOM.y;
@@ -92,9 +92,7 @@ Node *PostCOMSim::construct_tree(const std::vector<Body> &Bodies)
     double width = limits.second - limits.first;
     Vector3D p0_root{limits.first - 1.5 * width, limits.first - 1.5 * width, limits.first - 1.5 * width};
 
-    Node *root = new Node();
-    root->p0 = p0_root;
-    root->width = 4 * width;
+    Node *root = new Node(p0_root, 4 * width);
 
     for (const auto &b : Bodies)
     {
