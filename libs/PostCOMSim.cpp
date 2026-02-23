@@ -1,7 +1,7 @@
 #include "baseline.h"
 #include "utils.h"
 
-void PostCOMSim::insert(const Body *const b, Node *const n)
+void PostCOMSim::insert_COM_post(const Body *const b, Node *const n)
 {
     // this insert doesn't do any COM related compute
     Node *node = n;
@@ -30,7 +30,7 @@ void PostCOMSim::insert(const Body *const b, Node *const n)
 
         node->move_body_ptrOnly(mov_idx);
 
-        insert(b, node->get_child(new_idx));
+        insert_COM_post(b, node->get_child(new_idx));
         return;
     }
 
@@ -46,7 +46,7 @@ void PostCOMSim::insert(const Body *const b, Node *const n)
 
     Node *next_node = node->get_child(new_idx);
 
-    insert(b, next_node);
+    insert_COM_post(b, next_node);
 }
 
 void PostCOMSim::compute_COM_post(Node *const n)

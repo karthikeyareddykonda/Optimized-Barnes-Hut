@@ -9,6 +9,14 @@ public:
     Vector3D(double init_x, double init_y, double init_z) : x(init_x), y(init_y), z(init_z) {}
 
     Vector3D() : x(0), y(0), z(0) {}
+
+    Vector3D &operator+=(const Vector3D &other)
+    {
+        x += other.x;
+        y += other.y;
+        z += other.z;
+        return *this;
+    }
 };
 
 class Body
@@ -27,6 +35,8 @@ public:
     }
 
     // delete default constructor and copies ?
+
+    Body() {}
 };
 
 class Statistics // Reporting Statistics

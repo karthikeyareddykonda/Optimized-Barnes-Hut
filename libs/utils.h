@@ -21,8 +21,14 @@ inline void write_to_file(const std::vector<Body> &Bodies, std::string filename)
 
     std::ofstream file(filename);
     file << Bodies.size() << "\n";
+    int N = Bodies.size();
+    std::vector<Body> Bodies_orig(N);
 
     for (const auto &b : Bodies)
+    {
+        Bodies_orig[b.index] = b; // deep copy
+    }
+    for (const auto &b : Bodies_orig)
     {
         file << std::fixed << std::setprecision(10) << b.pos.x << "," << b.pos.y << "," << b.pos.z << "," << b.vel.x << "," << b.vel.y << "," << b.vel.z << "," << b.mass << "\n";
     }

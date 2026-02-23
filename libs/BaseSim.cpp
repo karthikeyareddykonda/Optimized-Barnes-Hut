@@ -86,6 +86,11 @@ Node *BaseSim::construct_tree(const std::vector<Body> &Bodies)
     return root;
 }
 
+void BaseSim::reorder(Node *const root, std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1)
+{
+    // BaseSim doesn't do any reordering
+}
+
 Vector3D BaseSim::compute_acceleration(const Body *const body, const Node *const node, const double theta)
 {
     if (node->is_leaf())
@@ -134,6 +139,37 @@ Vector3D BaseSim::compute_acceleration(const Body *const body, const Node *const
     return res;
 }
 
+void BaseSim::compute_acceleration_all(const std::vector<Body> &Bodies, const Node *const root, std::vector<Vector3D> &accelerations, unsigned i1)
+{
+    const unsigned int N = Bodies.size();
+    unsigned i0 = 0;
+    if (i1 == 0)
+        i0 = N;
+    for (unsigned i = 0; i < N; ++i)
+    {
+        accelerations[i1 + i] = compute_acceleration(&Bodies[i], root, theta);
+    }
+}
+
+void BaseSim::leapFrog(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1)
+{
+    const unsigned int N = Bodies.size();
+    unsigned i0 = 0;
+    if (i1 == 0)
+        i0 = N;
+    for (unsigned i = 0; i < N; ++i)
+    {
+        Vector3D p_car = Bodies[i].pos;
+        p_car.x += (Bodies[i].vel.x + 0.5 * accelerations[i0 + i].x * dt) * dt;
+        p_car.y += (Bodies[i].vel.y + 0.5 * accelerations[i0 + i].y * dt) * dt;
+        p_car.z += (Bodies[i].vel.z + 0.5 * accelerations[i0 + i].z * dt) * dt;
+        Bodies[i].pos = p_car;
+
+        Bodies[i].vel.x += 0.5 * (accelerations[i0 + i].x + accelerations[i1 + i].x) * dt;
+        Bodies[i].vel.y += 0.5 * (accelerations[i0 + i].y + accelerations[i1 + i].y) * dt;
+        Bodies[i].vel.z += 0.5 * (accelerations[i0 + i].z + accelerations[i1 + i].z) * dt;
+    }
+}
 Statistics BaseSim::timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1)
 {
     // Each thread better use it's own statistics, to avoid race even for statistic collection
@@ -148,7 +184,7 @@ Statistics BaseSim::timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &a
     // insert bodies into the tree
     auto start_insert = std::chrono::high_resolution_clock::now();
     Node *root = construct_tree(Bodies);
-
+    reorder(root, Bodies, accelerations, i1);
     auto end_insert = std::chrono::high_resolution_clock::now();
 
     times.t_insert += std::chrono::duration<double>(end_insert - start_insert).count();
@@ -156,30 +192,14 @@ Statistics BaseSim::timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &a
     // force calculation
 
     auto start_force = std::chrono::high_resolution_clock::now();
-
-    for (unsigned i = 0; i < N; ++i)
-    {
-        accelerations[i1 + i] = compute_acceleration(&Bodies[i], root, theta);
-    }
-
+    compute_acceleration_all(Bodies, root, accelerations, i1);
     auto end_force = std::chrono::high_resolution_clock::now();
 
     times.t_force += std::chrono::duration<double>(end_force - start_force).count();
 
     // leapfrog integration
     auto start_leapfrog = std::chrono::high_resolution_clock::now();
-    for (unsigned i = 0; i < N; ++i)
-    {
-        Vector3D p_car = Bodies[i].pos;
-        p_car.x += (Bodies[i].vel.x + 0.5 * accelerations[i0 + i].x * dt) * dt;
-        p_car.y += (Bodies[i].vel.y + 0.5 * accelerations[i0 + i].y * dt) * dt;
-        p_car.z += (Bodies[i].vel.z + 0.5 * accelerations[i0 + i].z * dt) * dt;
-        Bodies[i].pos = p_car;
-
-        Bodies[i].vel.x += 0.5 * (accelerations[i0 + i].x + accelerations[i1 + i].x) * dt;
-        Bodies[i].vel.y += 0.5 * (accelerations[i0 + i].y + accelerations[i1 + i].y) * dt;
-        Bodies[i].vel.z += 0.5 * (accelerations[i0 + i].z + accelerations[i1 + i].z) * dt;
-    }
+    leapFrog(Bodies, accelerations, i1);
     auto end_leapfrog = std::chrono::high_resolution_clock::now();
     times.t_leapfrog += std::chrono::duration<double>(end_leapfrog - start_leapfrog).count();
 

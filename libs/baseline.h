@@ -12,15 +12,17 @@
 class BaseSim
 {
 private:
-    const double dt;
-    const double theta;
-
-    Vector3D compute_acceleration(const Body *const b, const Node *const n, const double theta);
-    Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1);
-    void insert(const Body *const b, Node *const n);
+    void leapFrog(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1);
 
 protected:
+    const double dt;
+    const double theta;
     virtual Node *construct_tree(const std::vector<Body> &Bodies);
+    virtual void insert(const Body *const b, Node *const n);
+    virtual void reorder(Node *const root, std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1);
+    virtual Vector3D compute_acceleration(const Body *const b, const Node *const node, const double theta);
+    virtual void compute_acceleration_all(const std::vector<Body> &Bodies, const Node *const root, std::vector<Vector3D> &accelerations, unsigned i1);
+    virtual Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1);
 
 public:
     Statistics run(std::vector<Body> &Bodies, const int num_steps);
@@ -31,11 +33,42 @@ class PostCOMSim : public BaseSim
 {
 private:
     void compute_COM_post(Node *const n);
-    void insert(const Body *const b, Node *const n);
+    void insert_COM_post(const Body *const b, Node *const n);
 
 protected:
     Node *construct_tree(const std::vector<Body> &Bodies) override;
 
 public:
     PostCOMSim(double dt, double theta) : BaseSim(dt, theta) {}
+};
+
+class IterativeSim : public BaseSim
+{
+    // Construct tree logic is the same as base
+    // timestep logic is the same
+    // run logic is same as base
+    // insert and compute acceleration logic is different.
+
+protected:
+    Vector3D compute_acceleration(const Body *const b, const Node *const node, const double theta) override;
+    void insert(const Body *const b, Node *const n) override; // Virtual call overhead, but we get away with it due to iterative style
+
+public:
+    IterativeSim(double dt, double theta) : BaseSim(dt, theta) {}
+};
+
+class DFSOrderSim : public IterativeSim
+{
+
+    // Construct tree logic is same
+    // Run logic is same
+    // timstep logic is same
+    // Compute acceleration is same
+    // Reordering logic is different
+private:
+protected:
+    void reorder(Node *const root, std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1) override;
+
+public:
+    DFSOrderSim(double dt, double theta) : IterativeSim(dt, theta) {}
 };
