@@ -1,7 +1,7 @@
 CXX=g++
 CXXFLAGS += -O3 -MMD -std=c++20
 
-targets : vanilla  postCOM postCOM_contig iterative dfsOrder
+targets : vanilla  postCOM postCOM_contig iterative dfsOrder bodyBlocking bodyBlocking2
 
 vanilla :  BaseSim.o  main.cpp
 	$(CXX) $(CXXFLAGS) BaseSim.o  main.cpp -DSIM_CLASS=BaseSim -o vanilla 
@@ -16,7 +16,13 @@ iterative : BaseSim_contig.o  IterativeSim.o main.cpp
 	$(CXX) $(CXXFLAGS) BaseSim_contig.o IterativeSim.o main.cpp -DSIM_CLASS=IterativeSim -DUSE_CONTIGUOUS -o iterative
 
 dfsOrder : BaseSim_contig.o IterativeSim.o DFSOrderSim.o main.cpp 
-		$(CXX) $(CXXFLAGS) BaseSim_contig.o IterativeSim.o DFSOrderSim.o main.cpp -DSIM_CLASS=DFSOrderSim -DUSE_CONTIGUOUS -o dfsOrder
+	$(CXX) $(CXXFLAGS) BaseSim_contig.o IterativeSim.o DFSOrderSim.o main.cpp -DSIM_CLASS=DFSOrderSim -DUSE_CONTIGUOUS -o dfsOrder
+
+bodyBlocking : BaseSim_contig.o IterativeSim.o DFSOrderSim.o  BodyBlockingSim.o main.cpp
+	$(CXX) $(CXXFLAGS) BaseSim_contig.o IterativeSim.o DFSOrderSim.o BodyBlockingSim.o  main.cpp -DSIM_CLASS=BodyBlockingSim -DUSE_CONTIGUOUS -o bodyBlocking
+
+bodyBlocking2 : BaseSim_contig.o IterativeSim.o DFSOrderSim.o  BodyBlockingSim.o main.cpp
+	$(CXX) $(CXXFLAGS) BaseSim_contig.o IterativeSim.o DFSOrderSim.o BodyBlockingSim.o  main.cpp -DSIM_CLASS=BodyBlockingSim -DUSE_CONTIGUOUS -DBLOCK_SIZE=16 -o bodyBlocking2
 
 BaseSim.o :  libs/BaseSim.cpp 
 	$(CXX) $(CXXFLAGS) -c libs/BaseSim.cpp -o BaseSim.o
@@ -37,6 +43,9 @@ IterativeSim.o : libs/IterativeSim.cpp
 DFSOrderSim.o : libs/DFSOrderSim.cpp	
 	$(CXX) $(CXXFLAGS) -c libs/DFSOrderSim.cpp -DUSE_CONTIGUOUS -o DFSOrderSim.o
 
+BodyBlockingSim.o : libs/BodyBlockingSim.cpp
+	$(CXX) $(CXXFLAGS) -c libs/BodyBlockingSim.cpp -DUSE_CONTIGUOUS -o BodyBlockingSim.o
+
 
 
 
@@ -44,6 +53,6 @@ DFSOrderSim.o : libs/DFSOrderSim.cpp
 
 
 clean :
-	rm -r *.o  *.d *.dSYM vanilla postCOM postCOM_contig Iterative
+	rm -r *.o  *.d *.dSYM vanilla postCOM postCOM_contig Iterative bodyBlocking bodyBlocking2
 
 -include $(wildcard *.d)

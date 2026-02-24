@@ -20,7 +20,7 @@ protected:
     virtual Node *construct_tree(const std::vector<Body> &Bodies);
     virtual void insert(const Body *const b, Node *const n);
     virtual void reorder(Node *const root, std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1);
-    virtual Vector3D compute_acceleration(const Body *const b, const Node *const node, const double theta);
+    virtual Vector3D compute_acceleration(const Body *const b, const Node *const node, const double theta); // Why extra parameter theta ?
     virtual void compute_acceleration_all(const std::vector<Body> &Bodies, const Node *const root, std::vector<Vector3D> &accelerations, unsigned i1);
     virtual Statistics timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1);
 
@@ -71,4 +71,24 @@ protected:
 
 public:
     DFSOrderSim(double dt, double theta) : IterativeSim(dt, theta) {}
+};
+
+// Keeping Block size as compile time constant
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE 2
+#endif
+
+class BodyBlockingSim : public DFSOrderSim // Needs reordering for Body Blocking
+{
+    // compute_acceleration_all is different, have to handle Blocked compute
+private:
+    uint total_loops{0};
+    uint adv{0};
+    void compute_acceleration_block(const Body *bodies, const Node *const root, Vector3D *accelerations);
+
+protected:
+    void compute_acceleration_all(const std::vector<Body> &Bodies, const Node *const root, std::vector<Vector3D> &accelerations, unsigned i1) override;
+
+public:
+    BodyBlockingSim(double dt, double theta) : DFSOrderSim(dt, theta) { std::cout << "Block size " << BLOCK_SIZE << "\n"; }
 };
