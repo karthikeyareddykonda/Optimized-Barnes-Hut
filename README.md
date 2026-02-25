@@ -21,7 +21,7 @@ An efficient, high-performance implementation of the Barnes-Hut algorithm for $N
 | **6** | **AVX2 SIMD** | **20x** | Instruction Throughput (FLOPs) |
 
 
-* **Language:** C++17
+* **Language:** C++20
 * **Architecture:** x86_64 (AVX2, FMA)
 
 ---
@@ -104,7 +104,9 @@ For $\theta =0.5$ usually the force compute composes of over 90% execution time
 
 # Performance Overview
 
-
+<p align="center">
+  <img src="output.png" />
+</p>
 
 
 # Optimization Journey
