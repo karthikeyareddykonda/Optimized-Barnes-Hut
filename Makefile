@@ -1,7 +1,7 @@
 CXX=g++
-CXXFLAGS += -O3 -MMD -std=c++20
+CXXFLAGS += -O3 -MMD -std=c++20 -march=native
 
-targets : vanilla  postCOM postCOM_contig iterative dfsOrder bodyBlocking bodyBlocking2
+targets : vanilla  postCOM postCOM_contig iterative dfsOrder bodyBlocking bodyBlocking2 avx
 
 vanilla :  BaseSim.o  main.cpp
 	$(CXX) $(CXXFLAGS) BaseSim.o  main.cpp -DSIM_CLASS=BaseSim -o vanilla 
@@ -23,6 +23,10 @@ bodyBlocking : BaseSim_contig.o IterativeSim.o DFSOrderSim.o  BodyBlockingSim.o 
 
 bodyBlocking2 : BaseSim_contig.o IterativeSim.o DFSOrderSim.o  BodyBlockingSim.o main.cpp
 	$(CXX) $(CXXFLAGS) BaseSim_contig.o IterativeSim.o DFSOrderSim.o BodyBlockingSim.o  main.cpp -DSIM_CLASS=BodyBlockingSim -DUSE_CONTIGUOUS -DBLOCK_SIZE=16 -o bodyBlocking2
+
+avx : BaseSim_contig.o IterativeSim.o DFSOrderSim.o  BodyBlockingSim.o AVXSim.o main.cpp
+	$(CXX) $(CXXFLAGS) BaseSim_contig.o IterativeSim.o DFSOrderSim.o BodyBlockingSim.o AVXSim.o main.cpp -DSIM_CLASS=AVXSim -DUSE_CONTIGUOUS -DBLOCK_SIZE=4 -o avx
+
 
 BaseSim.o :  libs/BaseSim.cpp 
 	$(CXX) $(CXXFLAGS) -c libs/BaseSim.cpp -o BaseSim.o
@@ -46,6 +50,9 @@ DFSOrderSim.o : libs/DFSOrderSim.cpp
 BodyBlockingSim.o : libs/BodyBlockingSim.cpp
 	$(CXX) $(CXXFLAGS) -c libs/BodyBlockingSim.cpp -DUSE_CONTIGUOUS -o BodyBlockingSim.o
 
+AVXSim.o : libs/AVXSim.cpp
+	$(CXX) $(CXXFLAGS) -c libs/AVXSim.cpp -DUSE_CONTIGUOUS -o AVXSim.o
+
 
 
 
@@ -53,6 +60,6 @@ BodyBlockingSim.o : libs/BodyBlockingSim.cpp
 
 
 clean :
-	rm -r *.o  *.d *.dSYM vanilla postCOM postCOM_contig Iterative bodyBlocking bodyBlocking2
+	rm -r *.o  *.d *.dSYM vanilla postCOM postCOM_contig Iterative bodyBlocking bodyBlocking2 avx
 
 -include $(wildcard *.d)

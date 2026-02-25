@@ -1,5 +1,6 @@
 #include "baseline.h"
 #include "utils.h"
+#include "math.h"
 
 void IterativeSim::insert(const Body *const b, Node *const n)
 {

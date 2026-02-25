@@ -75,7 +75,7 @@ public:
 
 // Keeping Block size as compile time constant
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE 2
+#define BLOCK_SIZE 4
 #endif
 
 class BodyBlockingSim : public DFSOrderSim // Needs reordering for Body Blocking
@@ -84,11 +84,22 @@ class BodyBlockingSim : public DFSOrderSim // Needs reordering for Body Blocking
 private:
     uint total_loops{0};
     uint adv{0};
-    void compute_acceleration_block(const Body *bodies, const Node *const root, Vector3D *accelerations);
 
 protected:
+    virtual void compute_acceleration_block(const Body *bodies, const Node *const root, Vector3D *accelerations);
+
     void compute_acceleration_all(const std::vector<Body> &Bodies, const Node *const root, std::vector<Vector3D> &accelerations, unsigned i1) override;
 
 public:
-    BodyBlockingSim(double dt, double theta) : DFSOrderSim(dt, theta) { std::cout << "Block size " << BLOCK_SIZE << "\n"; }
+    BodyBlockingSim(double dt, double theta) : DFSOrderSim(dt, theta) {}
+};
+
+class AVXSim : public BodyBlockingSim
+{
+    // Only compute acceleration block logic is different. Valid only for BLOCK_SIZE 4
+protected:
+    virtual void compute_acceleration_block(const Body *bodies, const Node *const root, Vector3D *accelerations) override;
+
+public:
+    AVXSim(double dt, double theta) : BodyBlockingSim(dt, theta) {}
 };
