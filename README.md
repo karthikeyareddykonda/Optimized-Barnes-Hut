@@ -195,6 +195,8 @@ Insight : Hard to read code, but worth it in terms of performance. Amortizes the
 # Correctness & Stability
 The baseline implementation [In progress] : Demonstrate a solar system stable orbit, Demonstrate total energy graph being constant.
 
+![Solar System Simulation](solar_system.mp4)
+
 
 
 All the optimisations produce the exact same output ( the same file diff !) with same exact total Flop count ( except for postCOM ) as the baseline. Indicating the speed up is purely hardware
