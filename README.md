@@ -106,8 +106,16 @@ For $\theta =0.5$ usually the force compute composes of over 90% execution time
 
 <p align="center">
   <img src="output.png" />
+  <em>Figure 1: Cumulative speedup across 6 experimental iterations (N up to 8x10^5).</em>
 </p>
 
+
+| Parameter | Value |
+| :--- | :--- |
+| **Cluster** | ETHZ Euler |
+| **Compiler** | GCC  (with `-O3 -march=native -mfma`) |
+| **Precision** | $\theta = 0.5$ (Standard Barnes-Hut Accuracy) |
+| **Workload** | 5 Timesteps  |
 
 # Optimization Journey
 
@@ -141,7 +149,7 @@ The Insight : Consecutive cache line access improves the performance.
 The idea :  
 At first it seems that force compute among bodies are completely independent, indeed they are theoretically.  But one can observe closer the bodies, closer the approximation decision they make in the tree traversal. If the bodies have same co-ordinates, then they are gonna make the exact same decision.  For ex : computing force of milky way galaxy on earth and force of milky way galaxy on the sun. It's very likely that both the traversal end up using the same tree nodes due to their proximity. For the CPU this may not be apparent, but in case if earth and sun are computed one after the other. It is very likely that the tree nodes brought into cache by the former are being used by the later. So we decided to test the idea. We have the choices.   
 
-1. Add some extra clustering algorithms that rewrites the order among bodies considering their spatial locality. In this order earth and sun are very liekly to be adjacent in the order than earth and the North star.
+1. Add some extra clustering algorithms that rewrites the order among bodies considering their spatial locality. In this order earth and sun are very liekly to be adjacent in the order than earth and the North star. Examples include K-means, Z-order.
 
 2. Use the tree itself. Distance between two bodies is bounded by the diagnol of Lowest common ancestor.  In fact earth and sun are very likely to be adjacent, if we look the bodies we see in the tree dfs Order.  Luckily we are anyway constructing this tree. So we are gonna rewrite the order of bodies we are gonna use to compute the force
 
@@ -157,21 +165,21 @@ Since the idea of body reordering is very successful, we take this to the next l
 Force compute now looks like : 
 
 ```
-computeAcceleration ( Block of bodies, Node node)
+def computeAcceleration (Block of bodies, Node node)
 
- for body in Block :
-    check if body needs the Node:
-      Compute Acceleration of Body, Node as before
+    for body in Block :
+        check if body needs the Node:
+            Compute Acceleration of Body, Node as before
 ```
 
 Of course, we additionally manage the check using bitmasks. This can cause branching overhead, adding extra code for edge cases
 
-Result : A total speed up of over 11x for a block of size 2 (includes previous optimizations)
+Result : A total speed up of over 11x for a block of size 4 (includes previous optimizations)
 
 Insight : Reduced data Movement between L1 and registers. We are computing the result for both earth and sun very likely by keeping the common node data in the register itself. The overhead is worth it. We performed additional analysis
 regarding the node reusage. For a block of size 4, define reuse ratio as 
 
-$$ReuseRatio = \frac{\text{Nodes used by } >1 \text{ body in a block}}{\text{Total nodes visited by the function for that block}}$$
+$$ReuseRatio = \frac{\sum_{\text{All blocks}} \text{Nodes used by } >1 \text{ body in a block}}{\sum_{\text{All blocks}} \text{Total nodes visited by the function for that block}}$$
 
 In general reuse ratio is barely 5%, with body reordering this shoots up to over 80% even for randomly generated data. For real galaxy data this can likely go even higher, as they include many such star-planet clusters.
 
@@ -185,17 +193,24 @@ Insight : Hard to read code, but worth it in terms of performance. Amortizes the
 
 
 # Correctness & Stability
-The baseline implemntation 
+The baseline implementation [In progress] : Demonstrate a solar system stable orbit, Demonstrate total energy graph being constant.
 
 
 
-All the optimisations produce the exact same output ( the same file diff !) with same exact total Flop count ( except for postCOM ). Indicating the speed up is purely hardware
-optimisation, not any extra approximations involving skipping of flop related computations
+All the optimisations produce the exact same output ( the same file diff !) with same exact total Flop count ( except for postCOM ) as the baseline. Indicating the speed up is purely hardware
+optimisation, not any extra approximations involving skipping of flop related computations.
 # How to Build & Run
+
+Run make in the root repository. It generates the respective binaries.   
+analysis/data_gen.ipynb contains the script for generating the input data used in performance plot.  
+analysis/Baseline_scale.sh runs all the versions and produces the data used for the performance plot.
 
 # Future Work
 
 Multi threading : All the single threaded optimisation can help in improving the multi threaded as well.
+Multi threaded Tree Construction : Lock free Programming vs Lock Based.    
+Roofline Analysis : Analyse the roofline plot and confirm if the AVX version is compute bound.
 
-Blocked tree construction : Since the tree construction is very small fraction of the total run time, we ignored optimsiing it further. One can apply body blocking even on the tree insertion and gain further improvements.
+
+Blocked tree construction : Since the tree construction is very small fraction of the total run time, we ignored optimsiing it further. One can apply body blocking even on the tree insertion and gain further improvements. It might matter in case of Multi threaded since the force compute related time might become small enough that the tree computation is now significant fraction.
 

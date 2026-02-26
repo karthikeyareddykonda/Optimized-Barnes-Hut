@@ -82,9 +82,6 @@ class BodyBlockingSim : public DFSOrderSim // Needs reordering for Body Blocking
 {
     // compute_acceleration_all is different, have to handle Blocked compute
 private:
-    uint total_loops{0};
-    uint adv{0};
-
 protected:
     virtual void compute_acceleration_block(const Body *bodies, const Node *const root, Vector3D *accelerations);
 
