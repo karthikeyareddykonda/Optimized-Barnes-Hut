@@ -193,9 +193,17 @@ Insight : Hard to read code, but worth it in terms of performance. Amortizes the
 
 
 # Correctness & Stability
-The baseline implementation [In progress] : Demonstrate a solar system stable orbit, Demonstrate total energy graph being constant.
+The baseline implementation [In progress] : 
 
-![Solar System Simulation](solar_system.mp4)
+Stable Solar system orbits at 1hr timestep intervals.
+<p align="center">
+  <video src="solar_system.mp4" width="800" controls muted autoplay loop>
+    Your browser does not support the video tag.
+  </video>
+  <br>
+  <em><b>Figure 2:</b> 12-second stable orbit simulation for solar system.</em>
+</p>
+
 
 
 
