@@ -193,21 +193,21 @@ Insight : Hard to read code, but worth it in terms of performance. Amortizes the
 
 
 # Correctness & Stability
-The baseline implementation [In progress] : 
+The baseline implementation  : 
 
 Stable Solar system orbits at 1hr timestep intervals.
 <p align="center">
-  <video src="solar_system.mp4" width="800" controls muted autoplay loop>
-    Your browser does not support the video tag.
+  <video src="https://github.com/user-attachments/assets/12827d6c-780c-48ec-b5df-9178692cb33a" width="800" controls muted autoplay loop>
+    Your browser does not support the video tag
   </video>
   <br>
-  <em><b>Figure 2:</b> 12-second stable orbit simulation for solar system.</em>
+  <em><b>Figure 2:</b> stable orbit simulation for solar system.</em>
 </p>
 
+Total energy variation vs time [in progress]
 
 
-
-All the optimisations produce the exact same output ( the same file diff !) with same exact total Flop count ( except for postCOM ) as the baseline. Indicating the speed up is purely hardware
+All the optimization versions produce the exact same output (the same file diff!) with same exact total Flop count (except for postCOM) as the baseline. Indicating the speed up is purely hardware
 optimisation, not any extra approximations involving skipping of flop related computations.
 # How to Build & Run
 
