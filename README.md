@@ -135,13 +135,46 @@ The Result: Substantial reduction in "Pointer Chasing" latency and a more compac
 
 The Insight: By ensuring that all 8 children of a node are physically adjacent in memory, we maximize spatial locality. When the CPU fetches the first child, the hardware prefetcher  can automatically pulls the subsequent children into the L1/L2 cache before the code even requests them.
 
+Previously (say for example Node size, not actual) :
+```
+Node [ Parent ]
+  |
+  +-- vector<Node*> children (Heap Metadata)
+         |
+         | [ Pointers ]       [ Actual Nodes in Heap ]
+         | [  0  ]-----------> [ Node 0 ] (Address: 0x1A4F...)
+         | [  1  ]--+
+         | [ ... ]  |
+         | [  7  ]--|--------> [ Node 7 ] (Address: 0x9B21...)
+                    |
+                    +--------> [ Node 1 ] (Address: 0x44C2...)
+```
+
+Now
+```
+Node [ Parent ]
+  |
+  +-- Node* children (Address: 0x5000)
+         |
+         V
+      [ Contiguous Memory Block ]
+      +---------+---------+---------+---------+---------+---------+---------+---------+
+      | Node 0  | Node 1  | Node 2  | Node 3  | Node 4  | Node 5  | Node 6  | Node 7  |
+      +---------+---------+---------+---------+---------+---------+---------+---------+
+      ^         ^         ^
+    0x5000    0x5040    0x5080 ... (Offsets of sizeof(Node))
+```
+
 ### Recursive to iterative
 
 The baseline involves recursive calls , which involves a DFS like traversal on the tree, not exploiting the continuity we created among the child nodes before. We change the recursive implementation to iterative implementation with custom stack ( it's simply a vector < node * > ) and doing the traversal more like a BFS.
 
 The Result: A total speed up of 2.8x (including previous optimization)
 
-The Insight : Consecutive cache line access improves the performance.
+The Insight : Consecutive cache line access improves the performance.  
+
+DFS vs BFS for a quad tree traversal, Ours is Oct tree version of the same    
+<img width="464" height="287" alt="Screenshot 2026-02-28 at 9 11 15 AM" src="https://github.com/user-attachments/assets/6f2e85e4-8022-4833-9cd3-c3a9c0429417" />
 
 
 ###  Body reorder
@@ -153,9 +186,28 @@ At first it seems that force compute among bodies are completely independent, in
 
 2. Use the tree itself. Distance between two bodies is bounded by the diagnol of Lowest common ancestor.  In fact earth and sun are very likely to be adjacent, if we look the bodies we see in the tree dfs Order.  Luckily we are anyway constructing this tree. So we are gonna rewrite the order of bodies we are gonna use to compute the force
 
+For example    
+```
+[  Parent Node  ]
+              |
+      ________|__________________________________________
+     |        |        |        |        |        |        |
+   [C0]     [C1]     [C2]     [C3]     [C4]     [C5]     [C6]     [C7]
+    |        |        |        |        |        |        |        |
+    v        v        v        v        v        v        v        v
+  +----+   +----+   +----+   +----+   +----+   +----+   +----+   +----+
+  | b2 |   | b5 |   | b1 |   | b4 |   | b3 |   | b6 |   | b7 |   | b8 |
+  +----+   +----+   +----+   +----+   +----+   +----+   +----+   +----+
+```
+
+Before Ordering force computation calls  : b1, b2, b3, b4, b5, b6, b7, b8 (as given in the input)   
+After reordering : b2, b5, b1, b4, b3, b6, b7, b8 (as seen in the tree)
+
 The result : A total speed up of over 9x (includes previous optimizations as well). 
 
 The insight : Reduced cache misses across L1/L2 dramatically improves the performance.
+
+
 
 
 ### Body Blocking
@@ -207,8 +259,7 @@ Stable Solar system orbits at 1hr timestep intervals.
 Total energy variation vs time [in progress]
 
 
-All the optimization versions produce the exact same output (the same file diff!) with same exact total Flop count (except for postCOM) as the baseline. Indicating the speed up is purely hardware
-optimisation, not any extra approximations involving skipping of flop related computations.
+All the optimization versions produce the exact same output (the same file diff!) with same exact total Flop count (except for postCOM) as the baseline. Indicating the speed up is purely hardware optimizations, not any extra approximations involving skipping of flop related computations.
 # How to Build & Run
 
 Run make in the root repository. It generates the respective binaries.   
@@ -222,5 +273,5 @@ Multi threaded Tree Construction : Lock free Programming vs Lock Based.
 Roofline Analysis : Analyse the roofline plot and confirm if the AVX version is compute bound.
 
 
-Blocked tree construction : Since the tree construction is very small fraction of the total run time, we ignored optimsiing it further. One can apply body blocking even on the tree insertion and gain further improvements. It might matter in case of Multi threaded since the force compute related time might become small enough that the tree computation is now significant fraction.
+Blocked tree construction : Since the tree construction is very small fraction of the total run time, we ignored optimising it further. One can apply body blocking even on the tree insertion and gain further improvements. It might matter in case of Multi threaded since the force compute related time might become small enough that the tree computation is now significant fraction.
 
