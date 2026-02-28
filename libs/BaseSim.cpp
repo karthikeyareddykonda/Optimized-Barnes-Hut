@@ -184,10 +184,13 @@ Statistics BaseSim::timestep(std::vector<Body> &Bodies, std::vector<Vector3D> &a
     // insert bodies into the tree
     auto start_insert = std::chrono::high_resolution_clock::now();
     Node *root = construct_tree(Bodies);
-    reorder(root, Bodies, accelerations, i1);
     auto end_insert = std::chrono::high_resolution_clock::now();
-
     times.t_insert += std::chrono::duration<double>(end_insert - start_insert).count();
+
+    auto start_reorder = std::chrono::high_resolution_clock::now();
+    reorder(root, Bodies, accelerations, i1);
+    auto end_reorder = std::chrono::high_resolution_clock::now();
+    times.t_reorder += std::chrono::duration<double>(end_reorder - start_reorder).count();
 
     // force calculation
 
@@ -226,6 +229,9 @@ Statistics BaseSim::run(std::vector<Body> &Bodies, const int num_steps)
         times.t_insert += times_per_step.t_insert;
         times.t_force += times_per_step.t_force;
         times.t_leapfrog += times_per_step.t_leapfrog;
+        times.t_reorder += times_per_step.t_reorder;
     }
+    // Add reorder overhead in construction for brevity reporting
+    // times.t_insert += times.t_reorder;
     return times;
 }

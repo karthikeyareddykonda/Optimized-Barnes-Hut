@@ -13,9 +13,9 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    if (argc != 6)
+    if (argc < 6)
     {
-        cout << "Usage a.out inputFile num_iter dt theta outfile\n";
+        cout << "Usage a.out inputFile num_iter dt theta outfile optional_num_threads\n";
         return 0;
     }
     ifstream File(argv[1]);
@@ -26,6 +26,8 @@ int main(int argc, char *argv[])
     const double dt = stod(argv[3]); // Argv is in seconds --> converted to double
     const double theta = stod(argv[4]);
     const string out_file = argv[5];
+    if (argc > 6)
+        num_threads = stoi(argv[6]);
     cout << "Num objects " << N << "\n";
 
     std::string line;

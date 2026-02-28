@@ -5,10 +5,15 @@
 
 #ifdef USE_CONTIGUOUS
 #include "Node_contig.h"
+#elif defined(USE_MUTEX)
+#include "Node_mutex.h"
+#elif defined(USE_ATOMIC)
+#include "Node_atomic.h"
 #else
 #include "Node.h"
 #endif
 
+static int num_threads = 1;
 class BaseSim
 {
 private:
@@ -50,8 +55,8 @@ class IterativeSim : public BaseSim
     // insert and compute acceleration logic is different.
 
 protected:
-    Vector3D compute_acceleration(const Body *const b, const Node *const node, const double theta) override;
-    void insert(const Body *const b, Node *const n) override; // Virtual call overhead, but we get away with it due to iterative style
+    virtual Vector3D compute_acceleration(const Body *const b, const Node *const node, const double theta) override;
+    virtual void insert(const Body *const b, Node *const n) override; // Virtual call overhead, but we get away with it due to iterative style
 
 public:
     IterativeSim(double dt, double theta) : BaseSim(dt, theta) {}
@@ -67,7 +72,7 @@ class DFSOrderSim : public IterativeSim
     // Reordering logic is different
 private:
 protected:
-    void reorder(Node *const root, std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1) override;
+    virtual void reorder(Node *const root, std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1) override;
 
 public:
     DFSOrderSim(double dt, double theta) : IterativeSim(dt, theta) {}
@@ -85,7 +90,7 @@ private:
 protected:
     virtual void compute_acceleration_block(const Body *bodies, const Node *const root, Vector3D *accelerations);
 
-    void compute_acceleration_all(const std::vector<Body> &Bodies, const Node *const root, std::vector<Vector3D> &accelerations, unsigned i1) override;
+    virtual void compute_acceleration_all(const std::vector<Body> &Bodies, const Node *const root, std::vector<Vector3D> &accelerations, unsigned i1) override;
 
 public:
     BodyBlockingSim(double dt, double theta) : DFSOrderSim(dt, theta) {}
@@ -99,4 +104,51 @@ protected:
 
 public:
     AVXSim(double dt, double theta) : BodyBlockingSim(dt, theta) {}
+};
+
+// These versions Require a different Node class
+class MultiThreadedSim : public IterativeSim
+{
+private:
+    const int nThreads{1};
+    void compute_COM_post(Node *const n);
+    void construct_tree_thread(Node *const root, const std::vector<Body> &Bodies, const int start, const int end);
+
+protected:
+    virtual void reorder(Node *const root, std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1) override; // Does post compute COM as well now!
+    virtual void insert(const Body *const b, Node *const n) override;                                                              // Virtual call overhead, but we get away with it due to iterative style
+    virtual Node *construct_tree(const std::vector<Body> &Bodies) override;
+
+public:
+    MultiThreadedSim(double dt, double theta) : IterativeSim(dt, theta), nThreads(num_threads) {}
+};
+
+class LockFreeSim : public IterativeSim
+{
+private:
+    const int nThreads{1};
+    void construct_tree_thread(Node *const root, const std::vector<Body> &Bodies, const int start, const int end);
+
+protected:
+    virtual void reorder(Node *const root, std::vector<Body> &Bodies, std::vector<Vector3D> &accelerations, unsigned i1) override;
+    void compute_COM_post(Node *const n);
+    void insert(const Body *const b, Node *const n) override; // Virtual call overhead, but we get away with it due to iterative style
+    Vector3D compute_acceleration(const Body *const b, const Node *const node, const double theta) override;
+    Node *construct_tree(const std::vector<Body> &Bodies) override;
+
+public:
+    LockFreeSim(double dt, double theta) : IterativeSim(dt, theta), nThreads(num_threads) {}
+};
+
+class MultiThreadedForceSim : public BodyBlockingSim
+{
+private:
+    const int nThreads{1};
+    void compute_acceleration_thread(const std::vector<Body> &Bodies, const Node *const root, const int start, const int end, std::vector<Vector3D> &accelerations, unsigned i1);
+
+protected:
+    void compute_acceleration_all(const std::vector<Body> &Bodies, const Node *const root, std::vector<Vector3D> &accelerations, unsigned i1) override;
+
+public:
+    MultiThreadedForceSim(double dt, double theta) : BodyBlockingSim(dt, theta), nThreads(num_threads) {}
 };

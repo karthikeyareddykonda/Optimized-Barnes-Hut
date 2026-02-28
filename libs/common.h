@@ -43,15 +43,17 @@ class Statistics // Reporting Statistics
 {
 public:
     double t_insert;
+    double t_reorder;
     double t_force;
     double t_leapfrog;
 
-    Statistics() : t_insert(0), t_force(0), t_leapfrog(0) {}
+    Statistics() : t_insert(0), t_force(0), t_leapfrog(0), t_reorder(0) {}
 
     void print()
     {
         std::cout << "time taken by tree construction and deletion : " << t_insert << "\n";
         std::cout << "time taken by force computation : " << t_force << "\n";
         std::cout << "time taken by leapfrog integration : " << t_leapfrog << "\n";
+        std::cout << "time taken by reorder : " << t_reorder << "\n";
     }
 };
