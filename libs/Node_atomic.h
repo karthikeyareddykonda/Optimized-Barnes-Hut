@@ -137,7 +137,7 @@ public:
     const Body *get_body() const
     {
         // TO be used only in force compute !
-        return body_children.load(std::memory_order_relaxed).b;
+        return body_children.load(std::memory_order_release).b;
     }
 
     void store_body(const Body *new_body)
