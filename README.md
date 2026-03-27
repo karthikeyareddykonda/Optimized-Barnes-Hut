@@ -5,12 +5,12 @@
 
 An efficient, high-performance implementation of the Barnes-Hut algorithm for $N$-body gravitational simulations. This project tracks the evolution of a simulation engine from a baseline recursive implementation to a highly optimized system utilizing **Data-Oriented Design** and **SIMD vectorization**.
 
-> [!IMPORTANT]
+
 > **Key Result:** Achieved a **20x+ speedup** on a single thread compared to the GCC `-O3` compiled baseline.
 
 ---
 
-### ⚡ Performance Highlights
+###  Performance Highlights
 | Version | Strategy | Speedup | Bottleneck Addressed |
 | :--- | :--- | :--- | :--- |
 | **1** | Baseline (GCC -O3) | $1.0\times$ | Algorithmic Complexity |
@@ -61,7 +61,7 @@ Every time step in the simulation follows a two-phase cycle:
 3. Floating-point square roots and divisions are expensive scalar operations
 
 
-## 🧩 The Baseline: Recursive Barnes-Hut
+##  The Baseline: Recursive Barnes-Hut
 The initial implementation follows the standard recursive depth-first traversal. While mathematically intuitive, this structure is the primary source of performance bottlenecks due to frequent branching and stack overhead.
 
 ### Logic: `ComputeAcceleration(Body b, Node n)`
@@ -269,7 +269,7 @@ analysis/Baseline_scale.sh runs all the versions and produces the data used for 
 # Future Work
 
 Multi threading : All the single threaded optimisation can help in improving the multi threaded as well.
-Multi threaded Tree Construction : Lock free Programming vs Lock Based.    
+Multi threaded Tree Construction : Lock free Programming vs Lock Based. (Done, preliminary result : couldn't catch upto the speed of optimised single thread construction until 4 threads)    
 Roofline Analysis : Analyse the roofline plot and confirm if the AVX version is compute bound.
 
 
