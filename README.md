@@ -270,6 +270,7 @@ analysis/Baseline_scale.sh runs all the versions and produces the data used for 
 
 Multi threading : All the single threaded optimisation can help in improving the multi threaded as well.
 Multi threaded Tree Construction : Lock free Programming vs Lock Based. (Done, preliminary result : couldn't catch upto the speed of optimised single thread construction until 4 threads)    
+Use of Advanced Techniques : eg. Signal Trees or Work Contracts in C++ to mitigate performance loss in contention during tree construction.
 Roofline Analysis : Analyse the roofline plot and confirm if the AVX version is compute bound.
 
 
